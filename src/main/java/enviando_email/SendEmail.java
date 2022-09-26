@@ -26,13 +26,13 @@ public class SendEmail {
         this.body = body;
     }
 
-    public boolean sendEmail(){
+    public boolean sendEmail(boolean htmlFormat){
         try {
     	
             Properties properties = new Properties();
             properties.put("mail.smtp.host", "smtp.gmail.com");
             properties.put("mail.smtp.ssl.enable", "true");
-            properties.put("mail.smtp.ssl.trust", "true");
+            properties.put("mail.smtp.ssl.trust", "*");
             properties.put("mail.smtp.auth", "true");
             properties.put("mail.smtp.starttls", "true");
             properties.put("mail.smtp.port", "465");
@@ -51,7 +51,12 @@ public class SendEmail {
             message.setFrom(new InternetAddress(GMAIL_EMAIL, sendBy));
             message.setRecipients(Message.RecipientType.TO, toUser);
             message.setSubject(subject);
-            message.setText(body);
+
+            if(htmlFormat){
+                message.setContent(body, "text/html; charset=utf-8");;
+            }else{
+                message.setText(body);
+            }
     
             Transport.send(message);
             
