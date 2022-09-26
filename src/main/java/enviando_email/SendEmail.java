@@ -3,6 +3,8 @@ package enviando_email;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.activation.DataHandler;
@@ -23,16 +25,15 @@ import com.itextpdf.text.Document;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfWriter;
 
-
 public class SendEmail {
     private static final String GMAIL_EMAIL = System.getenv("GMAIL_JAVA_MAIL");
-	private static final String GMAIL_PASS = System.getenv("GMAIL_JAVA_PASS");
+    private static final String GMAIL_PASS = System.getenv("GMAIL_JAVA_PASS");
     private static final String PDF_FILE_PATH = "attachment.pdf";
     private String adressesTo = "";
     private String sendBy = "";
     private String subject = "";
     private String body = "";
-     
+
     public SendEmail(String adressesTo, String sendBy, String subject, String body) {
         this.adressesTo = adressesTo;
         this.sendBy = sendBy;
@@ -40,9 +41,9 @@ public class SendEmail {
         this.body = body;
     }
 
-    public boolean sendEmail(boolean htmlFormat, boolean hasAtacchment){
+    public boolean sendEmail(boolean htmlFormat, boolean hasAtacchment) {
         try {
-    	
+
             Properties properties = new Properties();
             properties.put("mail.smtp.host", "smtp.gmail.com");
             properties.put("mail.smtp.ssl.enable", "true");
@@ -52,60 +53,74 @@ public class SendEmail {
             properties.put("mail.smtp.port", "465");
             properties.put("mail.smtp.socketFactory.port", "465");
             properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-            
+
             Session session = Session.getInstance(properties, new Authenticator() {
                 @Override
                 protected PasswordAuthentication getPasswordAuthentication() {
                     return new PasswordAuthentication(GMAIL_EMAIL, GMAIL_PASS);
                 }
             });
-            
-            Address [] toUser = InternetAddress.parse(adressesTo);
+
+            Address[] toUser = InternetAddress.parse(adressesTo);
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(GMAIL_EMAIL, sendBy));
             message.setRecipients(Message.RecipientType.TO, toUser);
             message.setSubject(subject);
 
-            if(hasAtacchment){
-                MimeBodyPart emailbBodyPart = new MimeBodyPart();
-            
-                if(htmlFormat){
-                    emailbBodyPart.setContent(body, "text/html; charset=utf-8");;
-                }else{
-                    emailbBodyPart.setText(body);
-                }
-            
-                MimeBodyPart attachmentPart = new MimeBodyPart();
-                attachmentPart.setDataHandler(new DataHandler(new ByteArrayDataSource(pdfSimulatoStream(), "application/pdf")));
-                attachmentPart.setFileName(PDF_FILE_PATH);
-
-                Multipart multipart = new MimeMultipart();
-                multipart.addBodyPart(emailbBodyPart);
-                multipart.addBodyPart(attachmentPart);
-
-                message.setContent(multipart);
-
-            } else{
-                if(htmlFormat){
-                message.setContent(body, "text/html; charset=utf-8");;
-                }else{
+            if (hasAtacchment) {
+                Message sendEmaiWithAttachment = sendEmaiWithAttachment(htmlFormat, message);
+                Transport.send(sendEmaiWithAttachment);
+            } else {
+                if (htmlFormat) {
+                    message.setContent(body, "text/html; charset=utf-8");
+                } else {
                     message.setText(body);
+                    Transport.send(message);
                 }
-            }
+            }           
 
-            Transport.send(message);
-            
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return true;
     }
 
+    private Message sendEmaiWithAttachment(boolean htmlFormat,Message message) throws Exception{
+        MimeBodyPart emailbBodyPart = new MimeBodyPart();
+
+        if (htmlFormat) {
+            emailbBodyPart.setContent(body, "text/html; charset=utf-8");
+        } else {
+            emailbBodyPart.setText(body);
+        }
+        
+        Multipart multipart = new MimeMultipart();
+        multipart.addBodyPart(emailbBodyPart);
+        
+        List<FileInputStream> pdfFiles = new ArrayList<FileInputStream>();
+        pdfFiles.add(pdfSimulatoStream());
+        pdfFiles.add(pdfSimulatoStream());
+        
+        int index = 1;
+        for (FileInputStream fileInputStream : pdfFiles) {
+            MimeBodyPart attachmentPart = new MimeBodyPart();
+            attachmentPart.setDataHandler(
+                    new DataHandler(new ByteArrayDataSource(fileInputStream, "application/pdf")));
+            attachmentPart.setFileName("attachment_"+index+".pdf");
+            multipart.addBodyPart(attachmentPart);
+            index++;
+        }
+
+        message.setContent(multipart);
+        return message;
+    }
+
     /*
-     * Esse método simula o pdf que pode ter origem em outras fontes como BD, fileSystem
+     * Esse método simula o pdf que pode ter origem em outras fontes como BD,
+     * fileSystem
      * e retorna um pdf com o texto paragrafo como exemplo
      */
-    private FileInputStream pdfSimulatoStream() throws Exception{
+    private FileInputStream pdfSimulatoStream() throws Exception {
         Document document = new Document();
         File file = new File(PDF_FILE_PATH);
         file.createNewFile();
