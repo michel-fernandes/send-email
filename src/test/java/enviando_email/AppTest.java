@@ -15,11 +15,11 @@ public class AppTest {
                 "Michel Fernandes",
                 "Enviar e-mail com Java",
                 "Olá, esse é o e-mail geradp pelo nosso app em Java");
-        assertEquals(true, sendEmail.sendEmail(false));
+        assertEquals(true, sendEmail.sendEmail(false, false));
     }
 
     @Test
-    public void testeTextHtmlEmail() {
+    public void testeTextHtmlEmailWithAtacchment() {
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Olá, <br/><br/>");
@@ -34,6 +34,6 @@ public class AppTest {
                 "Michel Fernandes",
                 "Enviar e-mail com Java",
                 stringBuilder.toString());
-        assertEquals(true, sendEmail.sendEmail(true));
+        assertEquals(true, sendEmail.sendEmail(true, true));
     }
 }
